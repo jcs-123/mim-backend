@@ -1,5 +1,6 @@
 const User = require("../MODEL/usermodel.js");
 const Messcut = require("../MODEL/Messcut.js");
+const mongoose = require("mongoose");
 
 /**
  * 🧾 Generate Messcut Summary Report
@@ -134,8 +135,9 @@ exports.getAllMesscutDetails = async (req, res) => {
       );
 
       return {
+        _id: m._id.toString(), // VERY IMPORTANT
         name: m.name,
-        admissionNumber: m.admissionNo, // ✅ FIXED
+        admissionNumber: m.admissionNo,
         branch: student?.branch || "-",
         sem: student?.sem || "-",
         roomNo: m.roomNo,
@@ -143,20 +145,23 @@ exports.getAllMesscutDetails = async (req, res) => {
         returningDate: m.returningDate,
         reason: m.reason,
         status: m.status,
-        parentStatus: m.parentStatus, // ✅ IMPORTANT
+        parentStatus: m.parentStatus,
         createdAt: m.createdAt,
       };
     });
 
-    res.json({
+    res.status(200).json({
       success: true,
       count: fullData.length,
       data: fullData,
     });
+
   } catch (err) {
+    console.error("❌ Error fetching messcuts:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 /**
  * 🟢 Get messcut list for a specific date
  */
@@ -401,3 +406,60 @@ exports.getNameWiseMonthReport = async (req, res) => {
 };
 
 
+exports.updateMesscutDates = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { leavingDate, returningDate } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Messcut ID",
+      });
+    }
+
+    if (!leavingDate || !returningDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Leaving and Returning dates are required",
+      });
+    }
+
+    if (new Date(returningDate) <= new Date(leavingDate)) {
+      return res.status(400).json({
+        success: false,
+        message: "Returning date must be after leaving date",
+      });
+    }
+
+    const updated = await Messcut.findByIdAndUpdate(
+      id,
+      {
+        leavingDate,
+        returningDate,
+        statusUpdatedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        message: "Messcut record not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Messcut dates updated successfully",
+      data: updated,
+    });
+
+  } catch (error) {
+    console.error("❌ Update error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while updating messcut dates",
+    });
+  }
+};
