@@ -78,6 +78,10 @@ router.get(
   "/api/messcut/by-datereport",
   messcutreport.getDateWiseMesscutReport
 );
+router.put(
+  "/api/messcut/update-dates/:id",
+  messcutreport.updateMesscutDates
+);
 router.get("/api/messcut/month-wise", messcutreport.getNameWiseMonthReport);
 
 //attendancereportmodel
