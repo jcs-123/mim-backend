@@ -1,6 +1,6 @@
 const User = require("../MODEL/usermodel.js");
 const Messcut = require("../MODEL/Messcut.js");
-const mongoose = require("mongoose");
+const mongoose = require("mongoose");   // ✅ REQUIRED
 
 /**
  * 🧾 Generate Messcut Summary Report
@@ -37,6 +37,7 @@ exports.getMesscutReport = async (req, res) => {
           name: item.name,
           count: 0,
           lastDate: item.leavingDate,
+           feedue: item.feedue || "NORMAL",
         };
       }
       summary[adm].count += 1;
@@ -56,6 +57,7 @@ exports.getMesscutReport = async (req, res) => {
         sem: user ? user.sem || "-" : "-",
         count: r.count,
         lastDate: r.lastDate,
+        feedue: r.feedue, // ✅ added
       };
     });
 
@@ -135,9 +137,9 @@ exports.getAllMesscutDetails = async (req, res) => {
       );
 
       return {
-        _id: m._id.toString(), // VERY IMPORTANT
+        _id: m._id.toString(),   // ⭐ IMPORTANT
         name: m.name,
-        admissionNumber: m.admissionNo,
+        admissionNumber: m.admissionNo, // ✅ FIXED
         branch: student?.branch || "-",
         sem: student?.sem || "-",
         roomNo: m.roomNo,
@@ -145,22 +147,23 @@ exports.getAllMesscutDetails = async (req, res) => {
         returningDate: m.returningDate,
         reason: m.reason,
         status: m.status,
-        parentStatus: m.parentStatus,
+        parentStatus: m.parentStatus, // ✅ IMPORTANT
         createdAt: m.createdAt,
+         feedue: m.feedue || "NORMAL", 
       };
+
     });
 
-    res.status(200).json({
+    res.json({
       success: true,
       count: fullData.length,
       data: fullData,
     });
-
   } catch (err) {
-    console.error("❌ Error fetching messcuts:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 /**
  * 🟢 Get messcut list for a specific date
@@ -337,7 +340,7 @@ exports.getNameWiseMonthReport = async (req, res) => {
     // ⭐ 6. Loop all month days
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
 
-      const current = new Date(d);   
+      const current = new Date(d);
       current.setHours(0, 0, 0, 0);
 
       let meals = { B: true, L: true, T: true, D: true };
@@ -425,38 +428,32 @@ exports.updateMesscutDates = async (req, res) => {
       });
     }
 
-    if (new Date(returningDate) <= new Date(leavingDate)) {
-      return res.status(400).json({
-        success: false,
-        message: "Returning date must be after leaving date",
-      });
-    }
+    const messcut = await Messcut.findById(id);
 
-    const updated = await Messcut.findByIdAndUpdate(
-      id,
-      {
-        leavingDate,
-        returningDate,
-        statusUpdatedAt: new Date(),
-      },
-      { new: true }
-    );
-
-    if (!updated) {
+    if (!messcut) {
       return res.status(404).json({
         success: false,
         message: "Messcut record not found",
       });
     }
 
+    // ✅ Update only dates
+    messcut.leavingDate = leavingDate;
+    messcut.returningDate = returningDate;
+
+    // ✅ Track admin update time
+    messcut.statusUpdatedAt = new Date();
+
+    await messcut.save();
+
     res.status(200).json({
       success: true,
       message: "Messcut dates updated successfully",
-      data: updated,
+      data: messcut,
     });
 
   } catch (error) {
-    console.error("❌ Update error:", error);
+    console.error("❌ Messcut date update error:", error);
     res.status(500).json({
       success: false,
       message: "Server error while updating messcut dates",

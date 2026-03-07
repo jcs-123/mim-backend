@@ -28,7 +28,7 @@ const messcutSchema = new mongoose.Schema(
       trim: true,
       default: "-", // Example: "2 day(s) 5 hour(s)"
     },
-
+    feedue: { type: String, trim: true },
     // 🔹 Timestamp of when status was last updated
     statusUpdatedAt: {
       type: Date,

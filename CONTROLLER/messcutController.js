@@ -65,6 +65,7 @@ exports.createMesscutRequest = async (req, res) => {
   try {
     const {
       name,
+       feedue,
       admissionNo,
       roomNo,
       leavingDate,
@@ -87,6 +88,7 @@ exports.createMesscutRequest = async (req, res) => {
       name,
       admissionNo,
       roomNo,
+       feedue,
       leavingDate,
       leavingTime,
       returningDate,
